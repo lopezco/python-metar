@@ -8,14 +8,15 @@ from distutils.core import setup
 try:
     # add download_url syntax to distutils
     from distutils.dist import DistributionMetadata
+
     DistributionMetadata.classifiers = None
     DistributionMetadata.download_url = None
 except:
     pass
 
-DESCRIPTION="Metar - a package to parse METAR coded weather reports"
+DESCRIPTION = "Metar - a package to parse METAR coded weather reports"
 
-LONG_DESCRIPTION="""
+LONG_DESCRIPTION = """
 Metar is a python package for interpreting METAR and SPECI weather reports.
 
 METAR is an international format for reporting weather observations.
@@ -52,8 +53,8 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Intended Audience :: Science/Research",
-#        "Topic :: Formats and Protocols :: Data Formats",
-#        "Topic :: Scientific/Engineering :: Earth Sciences",
-#        "Topic :: Software Development :: Libraries :: Python Modules"
-        ]
-    )
+        #        "Topic :: Formats and Protocols :: Data Formats",
+        #        "Topic :: Scientific/Engineering :: Earth Sciences",
+        #        "Topic :: Software Development :: Libraries :: Python Modules"
+    ]
+)

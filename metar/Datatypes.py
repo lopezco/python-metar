@@ -7,6 +7,7 @@ import re
 from math import sin, cos, atan2, sqrt, atan
 import math
 
+
 # exceptions
 
 
@@ -14,21 +15,23 @@ class UnitsError(Exception):
     """Exception raised when unrecognized units are used."""
     pass
 
+
 # regexp to match fractions (used by Distance class)
 # [Note: numerator of fraction must be single digit.]
 
 FRACTION_RE = re.compile(r"^((?P<int>\d+)\s*)?(?P<num>\d)/(?P<den>\d+)$")
-    
+
+
 # classes representing dimensioned values in METAR reports
-        
+
 
 class Temperature(object):
     """A class representing a Temperature value."""
     legal_units = ["F", "C", "K"]
-    
+
     def __init__(self, value, units="C"):
         if not units.upper() in Temperature.legal_units:
-            raise UnitsError("unrecognized Temperature unit: '"+units+"'")
+            raise UnitsError("unrecognized Temperature unit: '" + units + "'")
         self._units = units.upper()
         try:
             self._value = float(value)
@@ -36,39 +39,39 @@ class Temperature(object):
             if value.startswith('M'):
                 self._value = -float(value[1:])
             else:
-                raise ValueError("Temperature must be integer: '"+str(value)+"'")
+                raise ValueError("Temperature must be integer: '" + str(value) + "'")
 
     def __str__(self):
         return self.string()
-        
+
     def value(self, units=None):
         """Return the Temperature in the specified units."""
         if units is None:
             return self._value
         else:
             if not units.upper() in Temperature.legal_units:
-                raise UnitsError("unrecognized Temperature unit: '"+units+"'")
+                raise UnitsError("unrecognized Temperature unit: '" + units + "'")
             units = units.upper()
         if self._units == "C":
             celsius_value = self._value
         elif self._units == "F":
-            celsius_value = (self._value-32.0)/1.8
+            celsius_value = (self._value - 32.0) / 1.8
         elif self._units == "K":
-            celsius_value = self._value-273.15
+            celsius_value = self._value - 273.15
         if units == "C":
             return celsius_value
         elif units == "K":
-            return 273.15+celsius_value
+            return 273.15 + celsius_value
         elif units == "F":
-            return 32.0+celsius_value*1.8
-            
+            return 32.0 + celsius_value * 1.8
+
     def string(self, units=None):
         """Return a string representation of the Temperature, using the given units."""
         if units is None:
             units = self._units
         else:
             if not units.upper() in Temperature.legal_units:
-                raise UnitsError("unrecognized Temperature unit: '"+units+"'")
+                raise UnitsError("unrecognized Temperature unit: '" + units + "'")
             units = units.upper()
         val = self.value(units)
         if units == "C":
@@ -82,44 +85,44 @@ class Temperature(object):
 class Pressure(object):
     """A class representing a barometric Pressure value."""
     legal_units = ["MB", "HPA", "IN"]
-    
+
     def __init__(self, value, units="MB"):
         if not units.upper() in Pressure.legal_units:
-            raise UnitsError("unrecognized Pressure unit: '"+units+"'")
+            raise UnitsError("unrecognized Pressure unit: '" + units + "'")
         self._value = float(value)
         self._units = units.upper()
 
     def __str__(self):
         return self.string()
-        
+
     def value(self, units=None):
         """Return the Pressure in the specified units."""
         if units is None:
             return self._value
         else:
             if not units.upper() in Pressure.legal_units:
-                raise UnitsError("unrecognized Pressure unit: '"+units+"'")
+                raise UnitsError("unrecognized Pressure unit: '" + units + "'")
             units = units.upper()
         if units == self._units:
             return self._value
         if self._units == "IN":
-            mb_value = self._value*33.86398
+            mb_value = self._value * 33.86398
         else:
             mb_value = self._value
         if units == "MB" or units == "HPA":
             return mb_value
         elif units == "IN":
-                return mb_value/33.86398
+            return mb_value / 33.86398
         else:
-            raise UnitsError("unrecognized Pressure unit: '"+units+"'")
-            
+            raise UnitsError("unrecognized Pressure unit: '" + units + "'")
+
     def string(self, units=None):
         """Return a string representation of the Pressure, using the given units."""
         if not units:
             units = self._units
         else:
             if not units.upper() in Pressure.legal_units:
-                raise UnitsError("unrecognized Pressure unit: '"+units+"'")
+                raise UnitsError("unrecognized Pressure unit: '" + units + "'")
             units = units.upper()
         val = self.value(units)
         if units == "MB":
@@ -134,56 +137,56 @@ class Speed(object):
     """A class representing a wind Speed value."""
     legal_units = ["KT", "MPS", "KMH", "MPH"]
     legal_gtlt = [">", "<"]
-    
+
     def __init__(self, value, units=None, gtlt=None):
         if not units:
             self._units = "MPS"
         else:
             if not units.upper() in Speed.legal_units:
-                raise UnitsError("unrecognized Speed unit: '"+units+"'")
+                raise UnitsError("unrecognized Speed unit: '" + units + "'")
             self._units = units.upper()
         if gtlt and not gtlt in Speed.legal_gtlt:
-            raise ValueError("unrecognized greater-than/less-than symbol: '"+gtlt+"'")
+            raise ValueError("unrecognized greater-than/less-than symbol: '" + gtlt + "'")
         self._gtlt = gtlt
         self._value = float(value)
 
     def __str__(self):
         return self.string()
-        
+
     def value(self, units=None):
         """Return the Pressure in the specified units."""
         if not units:
             return self._value
         else:
             if not units.upper() in Speed.legal_units:
-                raise UnitsError("unrecognized Speed unit: '"+units+"'")
+                raise UnitsError("unrecognized Speed unit: '" + units + "'")
             units = units.upper()
         if units == self._units:
             return self._value
         if self._units == "KMH":
-            mps_value = self._value/3.6
+            mps_value = self._value / 3.6
         elif self._units == "KT":
-            mps_value = self._value*0.514444
+            mps_value = self._value * 0.514444
         elif self._units == "MPH":
-            mps_value = self._value*0.447000
+            mps_value = self._value * 0.447000
         else:
             mps_value = self._value
         if units == "KMH":
-            return mps_value*3.6
+            return mps_value * 3.6
         elif units == "KT":
-            return mps_value/0.514444
+            return mps_value / 0.514444
         elif units == "MPH":
-            return mps_value/0.447000
+            return mps_value / 0.447000
         elif units == "MPS":
             return mps_value
-            
+
     def string(self, units=None):
         """Return a string representation of the Speed in the given units."""
         if not units:
             units = self._units
         else:
             if not units.upper() in Speed.legal_units:
-                raise UnitsError("unrecognized Speed unit: '"+units+"'")
+                raise UnitsError("unrecognized Speed unit: '" + units + "'")
             units = units.upper()
         val = self.value(units)
         if units == "KMH":
@@ -195,9 +198,9 @@ class Speed(object):
         elif units == "MPS":
             text = "%.0f mps" % val
         if self._gtlt == ">":
-            text = "greater than "+text
+            text = "greater than " + text
         elif self._gtlt == "<":
-            text = "less than "+text
+            text = "less than " + text
         return text
 
 
@@ -205,15 +208,15 @@ class Distance(object):
     """A class representing a Distance value."""
     legal_units = ["SM", "MI", "M", "KM", "FT"]
     legal_gtlt = [">", "<"]
-    
+
     def __init__(self, value, units=None, gtlt=None):
         if not units:
             self._units = "M"
         else:
             if not units.upper() in Distance.legal_units:
-                raise UnitsError("unrecognized Distance unit: '"+units+"'")
+                raise UnitsError("unrecognized Distance unit: '" + units + "'")
             self._units = units.upper()
-        
+
         try:
             if value.startswith('M'):
                 value = value[1:]
@@ -224,7 +227,7 @@ class Distance(object):
         except:
             pass
         if gtlt and not gtlt in Distance.legal_gtlt:
-            raise ValueError("unrecognized greater-than/less-than symbol: '"+gtlt+"'")
+            raise ValueError("unrecognized greater-than/less-than symbol: '" + gtlt + "'")
         self._gtlt = gtlt
         try:
             self._value = float(value)
@@ -233,54 +236,54 @@ class Distance(object):
         except ValueError:
             mf = FRACTION_RE.match(value)
             if not mf:
-                raise ValueError("Distance is not parseable: '"+str(value)+"'")
+                raise ValueError("Distance is not parseable: '" + str(value) + "'")
             df = mf.groupdict()
             self._num = int(df['num'])
             self._den = int(df['den'])
-            self._value = float(self._num)/float(self._den)
+            self._value = float(self._num) / float(self._den)
             if df['int']:
                 self._value += float(df['int'])
 
     def __str__(self):
         return self.string()
-        
+
     def value(self, units=None):
         """Return the Distance in the specified units."""
         if not units:
             return self._value
         else:
             if not units.upper() in Distance.legal_units:
-                raise UnitsError("unrecognized Distance unit: '"+units+"'")
+                raise UnitsError("unrecognized Distance unit: '" + units + "'")
             units = units.upper()
         if units == self._units:
             return self._value
         if self._units == "SM" or self._units == "MI":
-            m_value = self._value*1609.344
+            m_value = self._value * 1609.344
         elif self._units == "FT":
-            m_value = self._value/3.28084
+            m_value = self._value / 3.28084
         elif self._units == "KM":
-            m_value = self._value*1000
+            m_value = self._value * 1000
         else:
             m_value = self._value
         if units == "SM" or units == "MI":
-            return m_value/1609.344
+            return m_value / 1609.344
         elif units == "FT":
-            return m_value*3.28084
+            return m_value * 3.28084
         elif units == "KM":
-            return m_value/1000
+            return m_value / 1000
         elif units == "M":
             return m_value
-            
+
     def string(self, units=None):
         """Return a string representation of the Distance in the given units."""
         if not units:
             units = self._units
         else:
             if not units.upper() in Distance.legal_units:
-                raise UnitsError("unrecognized Distance unit: '"+units+"'")
+                raise UnitsError("unrecognized Distance unit: '" + units + "'")
             units = units.upper()
         if self._num and self._den and units == self._units:
-            val = int(self._value - self._num/self._den)
+            val = int(self._value - self._num / self._den)
             if val:
                 text = "%d %d/%d" % (val, self._num, self._den)
             else:
@@ -299,50 +302,50 @@ class Distance(object):
         elif units == "FT":
             text += " feet"
         if self._gtlt == ">":
-            text = "greater than "+text
+            text = "greater than " + text
         elif self._gtlt == "<":
-            text = "less than "+text
+            text = "less than " + text
         return text
 
 
 class Direction(object):
     """A class representing a compass Direction."""
-    
-    compass_dirs = { "N":    0.0, "NNE": 22.5, "NE": 45.0, "ENE": 67.5, 
-                                     "E": 90.0, "ESE":112.5, "SE":135.0, "SSE":157.5,
-                                     "S":180.0, "SSW":202.5, "SW":225.0, "WSW":247.5,
-                                     "W":270.0, "WNW":292.5, "NW":315.0, "NNW":337.5 }
+
+    compass_dirs = {"N": 0.0, "NNE": 22.5, "NE": 45.0, "ENE": 67.5,
+                    "E": 90.0, "ESE": 112.5, "SE": 135.0, "SSE": 157.5,
+                    "S": 180.0, "SSW": 202.5, "SW": 225.0, "WSW": 247.5,
+                    "W": 270.0, "WNW": 292.5, "NW": 315.0, "NNW": 337.5}
 
     def __init__(self, d):
-        if Direction.compass_dirs.get(d):
+        if Direction.compass_dirs.get(d, None) is not None:
             self._compass = d
             self._degrees = Direction.compass_dirs[d]
         else:
             self._compass = None
             value = float(d)
             if value < 0.0 or value > 360.0:
-                raise ValueError("Direction must be 0..360: '"+str(value)+"'")
+                raise ValueError("Direction must be 0..360: '" + str(value) + "'")
             self._degrees = value
 
     def __str__(self):
         return self.string()
-            
+
     def value(self):
         """Return the numerical Direction, in degrees."""
         return self._degrees
-        
+
     def string(self):
         """Return a string representation of the numerical Direction."""
         return "%.0f degrees" % self._degrees
-        
+
     def compass(self):
         """Return the compass Direction, e.g., "N", "ESE", etc.)."""
         if not self._compass:
-            degrees = 22.5 * round(self._degrees/22.5)
+            degrees = 22.5 * round(self._degrees / 22.5)
             if degrees == 360.0:
                 self._compass = "N"
             else:
-                for name, d in Direction.compass_dirs.iteritems():
+                for name, d in Direction.compass_dirs.items():
                     if d == degrees:
                         self._compass = name
                         break
@@ -353,15 +356,15 @@ class Precipitation(object):
     """A class representing a Precipitation value."""
     legal_units = ["IN", "CM"]
     legal_gtlt = [">", "<"]
-    
+
     def __init__(self, value, units=None, gtlt=None):
         if not units:
             self._units = "IN"
         else:
             if not units.upper() in Precipitation.legal_units:
-                raise UnitsError("unrecognized Precipitation unit: '"+units+"'")
+                raise UnitsError("unrecognized Precipitation unit: '" + units + "'")
             self._units = units.upper()
-        
+
         try:
             if value.startswith('M'):
                 value = value[1:]
@@ -372,39 +375,39 @@ class Precipitation(object):
         except:
             pass
         if gtlt and not gtlt in Precipitation.legal_gtlt:
-            raise ValueError("unrecognized greater-than/less-than symbol: '"+gtlt+"'")
+            raise ValueError("unrecognized greater-than/less-than symbol: '" + gtlt + "'")
         self._gtlt = gtlt
         self._value = float(value)
 
     def __str__(self):
         return self.string()
-        
+
     def value(self, units=None):
         """Return the Precipitation in the specified units."""
         if not units:
             return self._value
         else:
             if not units.upper() in Precipitation.legal_units:
-                raise UnitsError("unrecognized Precipitation unit: '"+units+"'")
+                raise UnitsError("unrecognized Precipitation unit: '" + units + "'")
             units = units.upper()
         if units == self._units:
             return self._value
         if self._units == "CM":
-            i_value = self._value*2.54
+            i_value = self._value * 2.54
         else:
             i_value = self._value
         if units == "CM":
-            return i_value*2.54
+            return i_value * 2.54
         else:
             return i_value
-            
+
     def string(self, units=None):
         """Return a string representation of the Precipitation in the given units."""
         if not units:
             units = self._units
         else:
             if not units.upper() in Precipitation.legal_units:
-                raise UnitsError("unrecognized Precipitation unit: '"+units+"'")
+                raise UnitsError("unrecognized Precipitation unit: '" + units + "'")
             units = units.upper()
         text = "%.2f" % self.value(units)
         if units == "CM":
@@ -412,22 +415,22 @@ class Precipitation(object):
         else:
             text += "in"
         if self._gtlt == ">":
-            text = "greater than "+text
+            text = "greater than " + text
         elif self._gtlt == "<":
-            text = "less than "+text
+            text = "less than " + text
         return text
 
 
 class Position(object):
     """A class representing a location on the earth's surface."""
-     
+
     def __init__(self, latitude=None, longitude=None):
         self.latitude = latitude
         self.longitude = longitude
 
     def __str__(self):
         return self.string()
-     
+
     def getdistance(self, position2):
         """
         Calculate the great-circle Distance to another location using the Haversine
@@ -439,9 +442,9 @@ class Position(object):
         long1 = self.longitude
         lat2 = position2.latitude
         long2 = position2.longitude
-        a = sin(0.5(lat2-lat1)) + cos(lat1)*cos(lat2)*sin(0.5*(long2-long1)**2)
-        c = 2.0*atan(sqrt(a)*sqrt(1.0-a))
-        d = Distance(earth_radius*c,"M")
+        a = sin(0.5(lat2 - lat1)) + cos(lat1) * cos(lat2) * sin(0.5 * (long2 - long1) ** 2)
+        c = 2.0 * atan(sqrt(a) * sqrt(1.0 - a))
+        d = Distance(earth_radius * c, "M")
         return d
 
     def getdirection(self, position2):
@@ -454,8 +457,8 @@ class Position(object):
         long1 = self.longitude
         lat2 = position2.latitude
         long2 = position2.longitude
-        s = -sin(long1-long2)*cos(lat2)
-        c = cos(lat1)*sin(lat2) - sin(lat1)*cos(lat2)*cos(long1-long2)
-        d = atan2(s,c)*180.0/math.pi
+        s = -sin(long1 - long2) * cos(lat2)
+        c = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(long1 - long2)
+        d = atan2(s, c) * 180.0 / math.pi
         if d < 0.0: d += 360.0
         return Direction(d)

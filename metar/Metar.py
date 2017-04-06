@@ -33,22 +33,24 @@ import datetime
 import string
 from .Datatypes import *
 
+
 ## Exceptions
 
 class ParserError(Exception):
-  """Exception raised when an unparseable group is found in body of the report."""
-  pass
+    """Exception raised when an unparseable group is found in body of the report."""
+    pass
+
 
 ## regular expressions to decode various groups of the METAR code
 
 MISSING_RE = re.compile(r"^[M/]+$")
 
-TYPE_RE =     re.compile(r"^(?P<type>METAR|SPECI)\s+")
-STATION_RE =  re.compile(r"^(?P<Station>[A-Z][A-Z0-9]{3})\s+")
+TYPE_RE = re.compile(r"^(?P<type>METAR|SPECI)\s+")
+STATION_RE = re.compile(r"^(?P<Station>[A-Z][A-Z0-9]{3})\s+")
 TIME_RE = re.compile(r"""^(?P<day>\d\d)
                           (?P<hour>\d\d)
                           (?P<min>\d\d)Z?\s+""",
-                          re.VERBOSE)
+                     re.VERBOSE)
 MODIFIER_RE = re.compile(r"^(?P<mod>AUTO|FINO|NIL|TEST|CORR?|RTD|CC[A-G])\s+")
 WIND_RE = re.compile(r"""^(?P<dir>[\dO]{3}|[0O]|///|MMM|VRB)
                           (?P<Speed>P?[\dO]{2,3}|[0O]+|[/M]{2,3})
@@ -56,7 +58,7 @@ WIND_RE = re.compile(r"""^(?P<dir>[\dO]{3}|[0O]|///|MMM|VRB)
                           (?P<units>KTS?|LT|K|T|KMH|MPS)?
                       (\s+(?P<varfrom>\d\d\d)V
                           (?P<varto>\d\d\d))?\s+""",
-                          re.VERBOSE)
+                     re.VERBOSE)
 # VISIBILITY_RE =   re.compile(r"""^(?P<vis>(?P<dist>M?(\d\s+)?\d/\d\d?|M?\d+)
 #                                     ( \s*(?P<units>SM|KM|M|U) | NDV |
 #                                          (?P<dir>[NSEW][EW]?) )? |
@@ -68,48 +70,48 @@ VISIBILITY_RE = re.compile(r"""^(?P<vis>(?P<dist>(M|P)?\d\d\d\d|////)
                                         (?P<distu>(M|P)?(\d+|\d\d?/\d\d?|\d+\s+\d/\d))
                                            (?P<units>SM|KM|M|U) | 
                                         CAVOK )\s+""",
-                                 re.VERBOSE)
+                           re.VERBOSE)
 # end patch
 RUNWAY_RE = re.compile(r"""^(RVRNO | 
                              R(?P<name>\d\d(RR?|LL?|C)?)/
                               (?P<low>(M|P)?\d\d\d\d)
                             (V(?P<high>(M|P)?\d\d\d\d))?
                               (?P<unit>FT)?[/NDU]*)\s+""",
-                              re.VERBOSE)
+                       re.VERBOSE)
 WEATHER_RE = re.compile(r"""^(?P<int>(-|\+|VC)*)
                              (?P<desc>(MI|PR|BC|DR|BL|SH|TS|FZ)+)?
                              (?P<prec>(DZ|RA|SN|SG|IC|PL|GR|GS|UP|/)*)
                              (?P<obsc>BR|FG|FU|VA|DU|SA|HZ|PY)?
                              (?P<other>PO|SQ|FC|SS|DS|NSW|/+)?
                              (?P<int2>[-+])?\s+""",
-                             re.VERBOSE)
-SKY_RE= re.compile(r"""^(?P<cover>VV|CLR|SKC|SCK|NSC|NCD|BKN|SCT|FEW|[O0]VC|///)
+                        re.VERBOSE)
+SKY_RE = re.compile(r"""^(?P<cover>VV|CLR|SKC|SCK|NSC|NCD|BKN|SCT|FEW|[O0]VC|///)
                         (?P<height>[\dO]{2,4}|///)?
                         (?P<cloud>([A-Z][A-Z]+|///))?\s+""",
-                        re.VERBOSE)
+                    re.VERBOSE)
 TEMP_RE = re.compile(r"""^(?P<temp>(M|-)?\d+|//|XX|MM)/
                           (?P<dewpt>(M|-)?\d+|//|XX|MM)?\s+""",
-                          re.VERBOSE)
+                     re.VERBOSE)
 PRESS_RE = re.compile(r"""^(?P<unit>A|Q|QNH|SLP)?
                            (?P<press>[\dO]{3,4}|////)
                            (?P<unit2>INS)?\s+""",
-                           re.VERBOSE)
+                      re.VERBOSE)
 RECENT_RE = re.compile(r"""^RE(?P<desc>MI|PR|BC|DR|BL|SH|TS|FZ)?
                               (?P<prec>(DZ|RA|SN|SG|IC|PL|GR|GS|UP)*)?
                               (?P<obsc>BR|FG|FU|VA|DU|SA|HZ|PY)?
                               (?P<other>PO|SQ|FC|SS|DS)?\s+""",
-                              re.VERBOSE)
+                       re.VERBOSE)
 WINDSHEAR_RE = re.compile(r"^(WS\s+)?(ALL\s+RWY|RWY(?P<name>\d\d(RR?|L?|C)?))\s+")
 COLOR_RE = re.compile(r"""^(BLACK)?(BLU|GRN|WHT|RED)\+?
                         (/?(BLACK)?(BLU|GRN|WHT|RED)\+?)*\s*""",
-                        re.VERBOSE)
+                      re.VERBOSE)
 RUNWAYSTATE_RE = re.compile(r"""((?P<name>\d\d) | R(?P<namenew>\d\d)(RR?|LL?|C)?/?)
                                 ((?P<special> SNOCLO|CLRD(\d\d|//)) |
                                  (?P<deposit>(\d|/))
                                  (?P<extent>(\d|/))
                                  (?P<depth>(\d\d|//))
                                  (?P<friction>(\d\d|//)))\s+""",
-                             re.VERBOSE)
+                            re.VERBOSE)
 TREND_RE = re.compile(r"^(?P<trend>TEMPO|BECMG|FCST|NOSIG)\s+")
 
 TRENDTIME_RE = re.compile(r"(?P<when>(FM|TL|AT))(?P<hour>\d\d)(?P<min>\d\d)\s+")
@@ -125,218 +127,224 @@ PEAK_WIND_RE = re.compile(r"""^P[A-Z]\s+WND\s+
                                (?P<Speed>P?\d\d\d?)/
                                (?P<hour>\d\d)?
                                (?P<min>\d\d)\s+""",
-                               re.VERBOSE)
+                          re.VERBOSE)
 WIND_SHIFT_RE = re.compile(r"""^WSHFT\s+
                                 (?P<hour>\d\d)?
                                 (?P<min>\d\d)
                                 (\s+(?P<front>FROPA))?\s+""",
-                                re.VERBOSE)
+                           re.VERBOSE)
 PRECIP_1HR_RE = re.compile(r"^P(?P<precip>\d\d\d\d)\s+")
 PRECIP_24HR_RE = re.compile(r"""^(?P<type>6|7)
                                  (?P<precip>\d\d\d\d)\s+""",
-                                 re.VERBOSE)
+                            re.VERBOSE)
 PRESS_3HR_RE = re.compile(r"""^5(?P<tend>[0-8])
                                 (?P<press>\d\d\d)\s+""",
-                                re.VERBOSE)
+                          re.VERBOSE)
 TEMP_1HR_RE = re.compile(r"""^T(?P<tsign>0|1)
                                (?P<temp>\d\d\d)
                                ((?P<dsign>0|1)
                                (?P<dewpt>\d\d\d))?\s+""",
-                               re.VERBOSE)
+                         re.VERBOSE)
 TEMP_6HR_RE = re.compile(r"""^(?P<type>1|2)
                               (?P<sign>0|1)
                               (?P<temp>\d\d\d)\s+""",
-                              re.VERBOSE)
+                         re.VERBOSE)
 TEMP_24HR_RE = re.compile(r"""^4(?P<smaxt>0|1)
                                 (?P<maxt>\d\d\d)
                                 (?P<smint>0|1)
                                 (?P<mint>\d\d\d)\s+""",
-                                re.VERBOSE)
+                          re.VERBOSE)
 UNPARSED_RE = re.compile(r"(?P<group>\S+)\s+")
 
 LIGHTNING_RE = re.compile(r"""^((?P<freq>OCNL|FRQ|CONS)\s+)?
                              LTG(?P<type>(IC|CC|CG|CA)*)
                                 ( \s+(?P<loc>( OHD | VC | DSNT\s+ | \s+AND\s+ | 
                                  [NSEW][EW]? (-[NSEW][EW]?)* )+) )?\s+""",
-                                re.VERBOSE)
-                                                  
+                          re.VERBOSE)
+
 TS_LOC_RE = re.compile(r"""TS(\s+(?P<loc>( OHD | VC | DSNT\s+ | \s+AND\s+ | 
                                            [NSEW][EW]? (-[NSEW][EW]?)* )+))?
                                           ( \s+MOV\s+(?P<dir>[NSEW][EW]?) )?\s+""",
-                           re.VERBOSE)
+                       re.VERBOSE)
 
 ## translation of weather location codes
 
-loc_terms = [ ("OHD", "overhead"), 
-              ("DSNT", "distant"), 
-              ("AND", "and"), 
-              ("VC", "nearby") ]
-                          
-def xlate_loc( loc ):
-  """Substitute English terms for the location codes in the given string."""
-  for code, english in loc_terms:
-      loc = loc.replace(code, english)
-  return loc
-  
+loc_terms = [("OHD", "overhead"),
+             ("DSNT", "distant"),
+             ("AND", "and"),
+             ("VC", "nearby")]
+
+
+def xlate_loc(loc):
+    """Substitute English terms for the location codes in the given string."""
+    for code, english in loc_terms:
+        loc = loc.replace(code, english)
+    return loc
+
+
 ## translation of the sky-condition codes into english
 
-SKY_COVER = { "SKC": "clear", 
-              "CLR": "clear", 
-              "NSC": "clear", 
-              "NCD": "clear", 
-              "FEW": "a few ", 
-              "SCT": "scattered ", 
-              "BKN": "broken ", 
-              "OVC": "overcast", 
-              "///": "", 
-              "VV": "indefinite ceiling" }
-                          
-CLOUD_TYPE = { "TCU": "towering cumulus", 
-               "CU": "cumulus", 
-               "CB": "cumulonimbus", 
-               "SC": "stratocumulus", 
-               "CBMAM": "cumulonimbus mammatus", 
-               "ACC": "altocumulus castellanus", 
-               "SCSL": "standing lenticular stratocumulus", 
-               "CCSL": "standing lenticular cirrocumulus", 
-               "ACSL": "standing lenticular altocumulus" }
-                              
+SKY_COVER = {"SKC": "clear",
+             "CLR": "clear",
+             "NSC": "clear",
+             "NCD": "clear",
+             "FEW": "a few ",
+             "SCT": "scattered ",
+             "BKN": "broken ",
+             "OVC": "overcast",
+             "///": "",
+             "VV": "indefinite ceiling"}
+
+CLOUD_TYPE = {"TCU": "towering cumulus",
+              "CU": "cumulus",
+              "CB": "cumulonimbus",
+              "SC": "stratocumulus",
+              "CBMAM": "cumulonimbus mammatus",
+              "ACC": "altocumulus castellanus",
+              "SCSL": "standing lenticular stratocumulus",
+              "CCSL": "standing lenticular cirrocumulus",
+              "ACSL": "standing lenticular altocumulus"}
+
 ## translation of the present-weather codes into english
 
-WEATHER_INT = { "-": "light", 
-                "+": "heavy", 
-                "-VC": "nearby light", 
-                "+VC": "nearby heavy", 
-                "VC": "nearby" }
-WEATHER_DESC = { "MI": "shallow", 
-                 "PR": "partial", 
-                 "BC": "patches of", 
-                 "DR": "low drifting", 
-                 "BL": "blowing", 
-                 "SH": "showers", 
-                 "TS": "thunderstorm", 
-                 "FZ": "freezing" }
-WEATHER_PREC = { "DZ": "drizzle", 
-                 "RA": "rain", 
-                 "SN": "snow", 
-                 "SG": "snow grains", 
-                 "IC": "ice crystals", 
-                 "PL": "ice pellets", 
-                 "GR": "hail", 
-                 "GS": "snow pellets", 
-                 "UP": "unknown Precipitation", 
-                 "//": "" }
-WEATHER_OBSC = { "BR": "mist", 
-                 "FG": "fog", 
-                 "FU": "smoke", 
-                 "VA": "volcanic ash", 
-                 "DU": "dust", 
-                 "SA": "sand", 
-                 "HZ": "haze", 
-                 "PY": "spray" }
-WEATHER_OTHER = { "PO": "sand whirls", 
-                  "SQ": "squalls", 
-                  "FC": "funnel cloud", 
-                  "SS": "sandstorm", 
-                  "DS": "dust storm" }
+WEATHER_INT = {"-": "light",
+               "+": "heavy",
+               "-VC": "nearby light",
+               "+VC": "nearby heavy",
+               "VC": "nearby"}
+WEATHER_DESC = {"MI": "shallow",
+                "PR": "partial",
+                "BC": "patches of",
+                "DR": "low drifting",
+                "BL": "blowing",
+                "SH": "showers",
+                "TS": "thunderstorm",
+                "FZ": "freezing"}
+WEATHER_PREC = {"DZ": "drizzle",
+                "RA": "rain",
+                "SN": "snow",
+                "SG": "snow grains",
+                "IC": "ice crystals",
+                "PL": "ice pellets",
+                "GR": "hail",
+                "GS": "snow pellets",
+                "UP": "unknown Precipitation",
+                "//": ""}
+WEATHER_OBSC = {"BR": "mist",
+                "FG": "fog",
+                "FU": "smoke",
+                "VA": "volcanic ash",
+                "DU": "dust",
+                "SA": "sand",
+                "HZ": "haze",
+                "PY": "spray"}
+WEATHER_OTHER = {"PO": "sand whirls",
+                 "SQ": "squalls",
+                 "FC": "funnel cloud",
+                 "SS": "sandstorm",
+                 "DS": "dust storm"}
 
-WEATHER_SPECIAL = { "+FC": "tornado" }
+WEATHER_SPECIAL = {"+FC": "tornado"}
 
-COLOR = { "BLU": "blue", 
-          "GRN": "green", 
-          "WHT": "white" }
-                  
+COLOR = {"BLU": "blue",
+         "GRN": "green",
+         "WHT": "white"}
+
 ## translation of various remark codes into English
-              
-PRESSURE_TENDENCY = { "0": "increasing, then decreasing", 
-                      "1": "increasing more slowly", 
-                      "2": "increasing",        
-                      "3": "increasing more quickly", 
-                      "4": "steady", 
-                      "5": "decreasing, then increasing", 
-                      "6": "decreasing more slowly", 
-                      "7": "decreasing", 
-                      "8": "decreasing more quickly" }
 
-LIGHTNING_FREQUENCY = { "OCNL": "occasional", 
-                        "FRQ": "frequent", 
-                        "CONS": "constant" }
-LIGHTNING_TYPE = { "IC": "intracloud", 
-                   "CC": "cloud-to-cloud", 
-                   "CG": "cloud-to-ground", 
-                   "CA": "cloud-to-air" }
+PRESSURE_TENDENCY = {"0": "increasing, then decreasing",
+                     "1": "increasing more slowly",
+                     "2": "increasing",
+                     "3": "increasing more quickly",
+                     "4": "steady",
+                     "5": "decreasing, then increasing",
+                     "6": "decreasing more slowly",
+                     "7": "decreasing",
+                     "8": "decreasing more quickly"}
 
-REPORT_TYPE = { "METAR": "routine report", 
-                "SPECI": "special report", 
-                "AUTO": "automatic report", 
-                "COR": "manually corrected report" }
+LIGHTNING_FREQUENCY = {"OCNL": "occasional",
+                       "FRQ": "frequent",
+                       "CONS": "constant"}
+LIGHTNING_TYPE = {"IC": "intracloud",
+                  "CC": "cloud-to-cloud",
+                  "CG": "cloud-to-ground",
+                  "CA": "cloud-to-air"}
+
+REPORT_TYPE = {"METAR": "routine report",
+               "SPECI": "special report",
+               "AUTO": "automatic report",
+               "COR": "manually corrected report"}
+
 
 ## Helper functions
 
 def _report_match(handler, match):
-  """Report success or failure of the given handler function. (DEBUG)"""
-  if match:
-      print(handler.__name__, " matched '"+match+"'")
-  else:
-      print(handler.__name__, " didn't match...")
-      
-def _unparsedGroup( self, d ):
+    """Report success or failure of the given handler function. (DEBUG)"""
+    if match:
+        print(handler.__name__, " matched '" + match + "'")
+    else:
+        print(handler.__name__, " didn't match...")
+
+
+def _unparsedGroup(self, d):
     """
     Handle otherwise unparseable main-body groups.
     """
     self._unparsed_groups.append(d['group'])
-      
+
+
 ## METAR report objects
 
 debug = False
 
+
 class MetarRowParser(object):
     """METAR (aviation meteorology report)"""
-    
-    def __init__( self, metarcode, month=None, year=None, utcdelta=None):
+
+    def __init__(self, metarcode, month=None, year=None, utcdelta=None):
         """Parse raw METAR code."""
-        self.code = metarcode              # original METAR code
-        self.type = 'METAR'                # METAR (routine) or SPECI (special)
-        self.mod = "AUTO"                  # AUTO (automatic) or COR (corrected)
-        self.station_id = None             # 4-character ICAO Station code
-        self.time = None                   # observation time [datetime]
-        self.cycle = None                  # observation cycle (0-23) [int]
-        self.wind_dir = None               # wind Direction [Direction]
-        self.wind_speed = None             # wind Speed [Speed]
-        self.wind_gust = None              # wind gust Speed [Speed]
-        self.wind_dir_from = None          # beginning of range for win dir [Direction]
-        self.wind_dir_to = None            # end of range for wind dir [Direction]
-        self.vis = None                    # visibility [Distance]
-        self.vis_dir = None                # visibility Direction [Direction]
-        self.max_vis = None                # visibility [Distance]
-        self.max_vis_dir = None            # visibility Direction [Direction]
-        self.temp = None                   # Temperature (C) [Temperature]
-        self.dewpt = None                  # dew point (C) [Temperature]
-        self.press = None                  # barometric Pressure [Pressure]
-        self.runway = []                   # runway visibility (list of tuples)
-        self.weather = []                  # present weather (list of tuples)
-        self.recent = []                   # recent weather (list of tuples)
-        self.sky = []                      # sky conditions (list of tuples)
-        self.windshear = []                # runways w/ wind shear (list of strings)
-        self.wind_speed_peak = None        # peak wind Speed in last hour
-        self.wind_dir_peak = None          # Direction of peak wind Speed in last hour
-        self.peak_wind_time = None         # time of peak wind observation [datetime]
-        self.wind_shift_time = None        # time of wind shift [datetime]
-        self.max_temp_6hr = None           # max temp in last 6 hours
-        self.min_temp_6hr = None           # min temp in last 6 hours
-        self.max_temp_24hr = None          # max temp in last 24 hours
-        self.min_temp_24hr = None          # min temp in last 24 hours
-        self.press_sea_level = None        # sea-level Pressure
-        self.precip_1hr = None             # Precipitation over the last hour
-        self.precip_3hr = None             # Precipitation over the last 3 hours
-        self.precip_6hr = None             # Precipitation over the last 6 hours
-        self.precip_24hr = None            # Precipitation over the last 24 hours
-        self._trend = False                # trend groups present (bool)
-        self._trend_groups = []            # trend forecast groups
-        self._remarks = []                 # remarks (list of strings)
+        self.code = metarcode  # original METAR code
+        self.type = 'METAR'  # METAR (routine) or SPECI (special)
+        self.mod = "AUTO"  # AUTO (automatic) or COR (corrected)
+        self.station_id = None  # 4-character ICAO Station code
+        self.time = None  # observation time [datetime]
+        self.cycle = None  # observation cycle (0-23) [int]
+        self.wind_dir = None  # wind Direction [Direction]
+        self.wind_speed = None  # wind Speed [Speed]
+        self.wind_gust = None  # wind gust Speed [Speed]
+        self.wind_dir_from = None  # beginning of range for win dir [Direction]
+        self.wind_dir_to = None  # end of range for wind dir [Direction]
+        self.vis = None  # visibility [Distance]
+        self.vis_dir = None  # visibility Direction [Direction]
+        self.max_vis = None  # visibility [Distance]
+        self.max_vis_dir = None  # visibility Direction [Direction]
+        self.temp = None  # Temperature (C) [Temperature]
+        self.dewpt = None  # dew point (C) [Temperature]
+        self.press = None  # barometric Pressure [Pressure]
+        self.runway = []  # runway visibility (list of tuples)
+        self.weather = []  # present weather (list of tuples)
+        self.recent = []  # recent weather (list of tuples)
+        self.sky = []  # sky conditions (list of tuples)
+        self.windshear = []  # runways w/ wind shear (list of strings)
+        self.wind_speed_peak = None  # peak wind Speed in last hour
+        self.wind_dir_peak = None  # Direction of peak wind Speed in last hour
+        self.peak_wind_time = None  # time of peak wind observation [datetime]
+        self.wind_shift_time = None  # time of wind shift [datetime]
+        self.max_temp_6hr = None  # max temp in last 6 hours
+        self.min_temp_6hr = None  # min temp in last 6 hours
+        self.max_temp_24hr = None  # max temp in last 24 hours
+        self.min_temp_24hr = None  # min temp in last 24 hours
+        self.press_sea_level = None  # sea-level Pressure
+        self.precip_1hr = None  # Precipitation over the last hour
+        self.precip_3hr = None  # Precipitation over the last 3 hours
+        self.precip_6hr = None  # Precipitation over the last 6 hours
+        self.precip_24hr = None  # Precipitation over the last 24 hours
+        self._trend = False  # trend groups present (bool)
+        self._trend_groups = []  # trend forecast groups
+        self._remarks = []  # remarks (list of strings)
         self._unparsed_groups = []
         self._unparsed_remarks = []
-        
+
         self._now = datetime.datetime.utcnow()
         if utcdelta:
             self._utcdelta = utcdelta
@@ -345,13 +353,13 @@ class MetarRowParser(object):
 
         self._month = month
         self._year = year
-        
-        code = self.code+" "    # (the regexps all expect trailing spaces...)
+
+        code = self.code + " "  # (the regexps all expect trailing spaces...)
         try:
             ngroup = len(MetarRowParser.handlers)
             igroup = 0
             ifailed = -1
-            while igroup < ngroup and code: 
+            while igroup < ngroup and code:
                 pattern, handler, repeatable = MetarRowParser.handlers[igroup]
                 if debug: print(handler.__name__, ": ", code)
                 m = pattern.match(code)
@@ -363,7 +371,7 @@ class MetarRowParser(object):
                     if self._trend:
                         code = self._do_trend_handlers(code)
                     if not repeatable: break
-                    
+
                     if debug: print(handler.__name__, ": ", code)
                     m = pattern.match(code)
                 if not m and ifailed < 0:
@@ -379,7 +387,7 @@ class MetarRowParser(object):
                     code = code[m.end():]
                     igroup = ifailed
                     ifailed = -2  # if it's still -2 when we run out of main-body
-                                  #  groups, we'll try parsing this group as a remark
+                    #  groups, we'll try parsing this group as a remark
             if pattern == REMARK_RE or self.press:
                 while code:
                     for pattern, handler in MetarRowParser.remark_handlers:
@@ -392,11 +400,11 @@ class MetarRowParser(object):
                             break
 
         except Exception as err:
-            raise ParserError(handler.__name__+" failed while processing '"+code+"'\n"+ ' '.join(err.args))
+            raise ParserError(handler.__name__ + " failed while processing '" + code + "'\n" + ' '.join(err.args))
             raise err
         if self._unparsed_groups:
             code = ' '.join(self._unparsed_groups)
-            #raise ParserError("Unparsed groups in body: "+code)
+            raise ParserError("Unparsed groups in body: "+code)
 
     def _do_trend_handlers(self, code):
         for pattern, handler, repeatable in MetarRowParser.trend_handlers:
@@ -410,20 +418,20 @@ class MetarRowParser(object):
                 if not repeatable: break
                 m = pattern.match(code)
         return code
-                    
+
     def __str__(self):
         return self.string()
 
-    def _handleType( self, d ):
+    def _handleType(self, d):
         """
         Parse the code-type group.
         
         The following attributes are set:
             type   [string]
         """
-        self.type = d['type'] 
-            
-    def _handleStation( self, d ):
+        self.type = d['type']
+
+    def _handleStation(self, d):
         """
         Parse the Station id group.
         
@@ -431,20 +439,20 @@ class MetarRowParser(object):
             station_id   [string]
         """
         self.station_id = d['Station']
-            
-    def _handleModifier( self, d ):
+
+    def _handleModifier(self, d):
         """
         Parse the report-modifier group.
         
         The following attributes are set:
             mod   [string]
         """
-        mod = d['mod'] 
+        mod = d['mod']
         if mod == 'CORR': mod = 'COR'
         if mod == 'NIL' or mod == 'FINO': mod = 'NO DATA'
         self.mod = mod
-                            
-    def _handleTime( self, d ):
+
+    def _handleTime(self, d):
         """
         Parse the observation-time group.
         
@@ -456,9 +464,9 @@ class MetarRowParser(object):
             _min   [int]
         """
         self._day = int(d['day'])
-        if not self._month: 
+        if not self._month:
             self._month = self._now.month
-            if self._day > self._now.day: 
+            if self._day > self._now.day:
                 if self._month == 1:
                     self._month = 12
                 else:
@@ -471,14 +479,14 @@ class MetarRowParser(object):
                 self._year = self._year - 1
         self._hour = int(d['hour'])
         self._min = int(d['min'])
-        self.time = datetime.datetime(self._year, self._month, self._day, 
-                                                                    self._hour, self._min)
+        self.time = datetime.datetime(self._year, self._month, self._day,
+                                      self._hour, self._min)
         if self._min < 45:
             self.cycle = self._hour
         else:
-            self.cycle = self._hour+1
-                            
-    def _handleWind( self, d ):
+            self.cycle = self._hour + 1
+
+    def _handleWind(self, d):
         """
         Parse the wind and variable-wind groups.
         
@@ -494,7 +502,7 @@ class MetarRowParser(object):
             self.wind_dir = Direction(wind_dir)
         wind_speed = d['Speed'].replace('O', '0')
         units = d['units']
-        if units == 'KTS' or units == 'K' or units == 'T' or units == 'LT': 
+        if units == 'KTS' or units == 'K' or units == 'T' or units == 'LT':
             units = 'KT'
         if wind_speed.startswith("P"):
             self.wind_speed = Speed(wind_speed[1:], units, ">")
@@ -509,8 +517,8 @@ class MetarRowParser(object):
         if d['varfrom']:
             self.wind_dir_from = Direction(d['varfrom'])
             self.wind_dir_to = Direction(d['varto'])
-        
-    def _handleVisibility( self, d ):
+
+    def _handleVisibility(self, d):
         """
         Parse the minimum and maximum visibility groups.
          
@@ -528,11 +536,11 @@ class MetarRowParser(object):
         if d['dist'] and d['dist'] != '////':
             vis_dist = d['dist']
             if d['dir'] and d['dir'] != 'NDV':
-                vis_dir = d['dir']    
+                vis_dir = d['dir']
         elif d['distu']:
             vis_dist = d['distu']
             if d['units'] and d['units'] != "U":
-                    vis_units = d['units']
+                vis_units = d['units']
         if vis_dist == "9999":
             vis_dist = "10000"
             vis_less = ">"
@@ -544,8 +552,8 @@ class MetarRowParser(object):
             if vis_dir:
                 self.vis_dir = Direction(vis_dir)
             self.vis = Distance(vis_dist, vis_units, vis_less)
-                            
-    def _handleRunway( self, d ):
+
+    def _handleRunway(self, d):
         """
         Parse a runway visual range group.
         
@@ -563,8 +571,8 @@ class MetarRowParser(object):
             else:
                 high = low
             self.runway.append((name, low, high))
-                            
-    def _handleWeather( self, d ):
+
+    def _handleWeather(self, d):
         """
         Parse a present-weather group.
         
@@ -584,8 +592,8 @@ class MetarRowParser(object):
         obsci = d['obsc']
         otheri = d['other']
         self.weather.append((inteni, desci, preci, obsci, otheri))
-                            
-    def _handleSky( self, d ):
+
+    def _handleSky(self, d):
         """
         Parse a sky-conditions group.
         
@@ -600,15 +608,15 @@ class MetarRowParser(object):
             height = None
         else:
             height = height.replace('O', '0')
-            height = Distance(int(height)*100, "FT")
+            height = Distance(int(height) * 100, "FT")
         cover = d['cover']
         if cover == 'SCK' or cover == 'SKC' or cover == 'CL': cover = 'CLR'
         if cover == '0VC': cover = 'OVC'
         cloud = d['cloud']
         if cloud == '///': cloud = ""
         self.sky.append((cover, height, cloud))
-                            
-    def _handleTemp( self, d ):
+
+    def _handleTemp(self, d):
         """
         Parse a Temperature-dewpoint group.
         
@@ -618,12 +626,12 @@ class MetarRowParser(object):
         """
         temp = d['temp']
         dewpt = d['dewpt']
-        if  temp and temp != "//" and temp != "XX" and temp != "MM" :
+        if temp and temp != "//" and temp != "XX" and temp != "MM":
             self.temp = Temperature(temp)
-        if dewpt and dewpt != "//" and dewpt != "XX" and dewpt != "MM" :
+        if dewpt and dewpt != "//" and dewpt != "XX" and dewpt != "MM":
             self.dewpt = Temperature(dewpt)
-        
-    def _handlePressure( self, d ):
+
+    def _handlePressure(self, d):
         """
         Parse an altimeter-Pressure group.
         
@@ -635,22 +643,22 @@ class MetarRowParser(object):
             press = float(press.replace('O', '0'))
             if d['unit']:
                 if d['unit'] == 'A' or (d['unit2'] and d['unit2'] == 'INS'):
-                    self.press = Pressure(press/100, 'IN')
+                    self.press = Pressure(press / 100, 'IN')
                 elif d['unit'] == 'SLP':
                     if press < 500:
-                        press = press/10 + 1000
+                        press = press / 10 + 1000
                     else:
-                        press = press/10 + 900
+                        press = press / 10 + 900
                     self.press = Pressure(press, 'MB')
                     self._remarks.append("sea-level Pressure %.1fhPa" % press)
                 else:
                     self.press = Pressure(press, 'MB')
             elif press > 2500:
-                self.press = Pressure(press/100, 'IN')
+                self.press = Pressure(press / 100, 'IN')
             else:
                 self.press = Pressure(press, 'MB')
-                            
-    def _handleRecent( self, d ):
+
+    def _handleRecent(self, d):
         """
         Parse a recent-weather group.
         
@@ -667,8 +675,8 @@ class MetarRowParser(object):
         obsci = d['obsc']
         otheri = d['other']
         self.recent.append(("", desci, preci, obsci, otheri))
-        
-    def _handleWindShear( self, d ):
+
+    def _handleWindShear(self, d):
         """
         Parse wind-shear groups.
         
@@ -679,8 +687,8 @@ class MetarRowParser(object):
             self.windshear.append(d['name'])
         else:
             self.windshear.append("ALL")
-        
-    def _handleColor( self, d ):
+
+    def _handleColor(self, d):
         """
         Parse (and ignore) the color groups.
         
@@ -688,8 +696,8 @@ class MetarRowParser(object):
             trend    [list of strings]
         """
         pass
- 
-    def _handleRunwayState( self, d ):
+
+    def _handleRunwayState(self, d):
         """
         Parse (and ignore) the runway state.
 
@@ -697,38 +705,38 @@ class MetarRowParser(object):
         """
         pass
 
-    def _handleTrend( self, d ):
+    def _handleTrend(self, d):
         """
         Parse (and ignore) the trend groups.
         """
-        if d.get('trend'):
+        if d.get('trend', None) is not None:
             self._trend_groups.append(d['trend'])
         self._trend = True
-        
-    def _startRemarks( self, d ):
+
+    def _startRemarks(self, d):
         """
         Found the start of the remarks section.
         """
         self._remarks = []
-        
-    def _handleSealvlPressRemark( self, d ):
+
+    def _handleSealvlPressRemark(self, d):
         """
         Parse the sea-level Pressure remark group.
         """
-        value = float(d['press'])/10.0
-        if value < 50: 
+        value = float(d['press']) / 10.0
+        if value < 50:
             value += 1000
-        else: 
+        else:
             value += 900
         if not self.press:
             self.press = Pressure(value, "MB")
         self.press_sea_level = Pressure(value, "MB")
-                
-    def _handlePrecip24hrRemark( self, d ):
+
+    def _handlePrecip24hrRemark(self, d):
         """
         Parse a 3-, 6- or 24-hour cumulative preciptation remark group.
         """
-        value = float(d['precip'])/100.0
+        value = float(d['precip']) / 100.0
         if d['type'] == "6":
             if self.cycle == 3 or self.cycle == 9 or self.cycle == 15 or self.cycle == 21:
                 self.precip_3hr = Precipitation(value, "IN")
@@ -736,57 +744,57 @@ class MetarRowParser(object):
                 self.precip_6hr = Precipitation(value, "IN")
         else:
             self.precip_24hr = Precipitation(value, "IN")
-                
-    def _handlePrecip1hrRemark( self, d ):
+
+    def _handlePrecip1hrRemark(self, d):
         """Parse an hourly Precipitation remark group."""
-        value = float(d['precip'])/100.0
+        value = float(d['precip']) / 100.0
         self.precip_1hr = Precipitation(value, "IN")
-                                
-    def _handleTemp1hrRemark( self, d ):
+
+    def _handleTemp1hrRemark(self, d):
         """
         Parse a Temperature & dewpoint remark group.
         
         These values replace the temp and dewpt from the body of the report.
         """
-        value = float(d['temp'])/10.0
+        value = float(d['temp']) / 10.0
         if d['tsign'] == "1": value = -value
         self.temp = Temperature(value)
         if d['dewpt']:
-            value2 = float(d['dewpt'])/10.0
+            value2 = float(d['dewpt']) / 10.0
             if d['dsign'] == "1": value2 = -value2
             self.dewpt = Temperature(value2)
-                                
-    def _handleTemp6hrRemark( self, d ):
+
+    def _handleTemp6hrRemark(self, d):
         """
         Parse a 6-hour maximum or minimum Temperature remark group.
         """
-        value = float(d['temp'])/10.0
+        value = float(d['temp']) / 10.0
         if d['sign'] == "1": value = -value
         if d['type'] == "1":
             self.max_temp_6hr = Temperature(value, "C")
         else:
             self.min_temp_6hr = Temperature(value, "C")
-        
-    def _handleTemp24hrRemark( self, d ):
+
+    def _handleTemp24hrRemark(self, d):
         """
         Parse a 24-hour maximum/minimum Temperature remark group.
         """
-        value = float(d['maxt'])/10.0
+        value = float(d['maxt']) / 10.0
         if d['smaxt'] == "1": value = -value
-        value2 = float(d['mint'])/10.0
+        value2 = float(d['mint']) / 10.0
         if d['smint'] == "1": value2 = -value2
         self.max_temp_24hr = Temperature(value, "C")
         self.min_temp_24hr = Temperature(value2, "C")
-                        
-    def _handlePress3hrRemark( self, d ):
+
+    def _handlePress3hrRemark(self, d):
         """
         Parse a Pressure-tendency remark group.
         """
-        value = float(d['press'])/10.0
+        value = float(d['press']) / 10.0
         descrip = PRESSURE_TENDENCY[d['tend']]
         self._remarks.append("3-hr Pressure change %.1fhPa, %s" % (value, descrip))
-            
-    def _handlePeakWindRemark( self, d ):
+
+    def _handlePeakWindRemark(self, d):
         """
         Parse a peak wind remark group.
         """
@@ -799,17 +807,17 @@ class MetarRowParser(object):
             peak_hour = int(d['hour'])
         else:
             peak_hour = self._hour
-        self.peak_wind_time = datetime.datetime(self._year, self._month, self._day, 
-                                                                    peak_hour, peak_min)
+        self.peak_wind_time = datetime.datetime(self._year, self._month, self._day,
+                                                peak_hour, peak_min)
         if self.peak_wind_time > self.time:
             if peak_hour > self._hour:
                 self.peak_wind_time -= datetime.timedelta(hours=24)
             else:
                 self.peak_wind_time -= datetime.timedelta(hours=1)
         self._remarks.append("peak wind %dkt from %d degrees at %d:%02d" % \
-                                                (peak_speed, peak_dir, peak_hour, peak_min))
-            
-    def _handleWindShiftRemark( self, d ):
+                             (peak_speed, peak_dir, peak_hour, peak_min))
+
+    def _handleWindShiftRemark(self, d):
         """
         Parse a wind shift remark group.
         """
@@ -818,49 +826,49 @@ class MetarRowParser(object):
         else:
             wshft_hour = self._hour
         wshft_min = int(d['min'])
-        self.wind_shift_time = datetime.datetime(self._year, self._month, self._day, 
-                                                                    wshft_hour, wshft_min)
+        self.wind_shift_time = datetime.datetime(self._year, self._month, self._day,
+                                                 wshft_hour, wshft_min)
         if self.wind_shift_time > self.time:
             if wshft_hour > self._hour:
                 self.wind_shift_time -= datetime.timedelta(hours=24)
             else:
                 self.wind_shift_time -= datetime.timedelta(hours=1)
-        text = "wind shift at %d:%02d" %  (wshft_hour, wshft_min)
+        text = "wind shift at %d:%02d" % (wshft_hour, wshft_min)
         if d['front']:
             text += " (front)"
         self._remarks.append(text)
-            
-    def _handleLightningRemark( self, d ):
+
+    def _handleLightningRemark(self, d):
         """
         Parse a lightning observation remark group.
         """
         parts = []
         if d['freq']:
             parts.append(LIGHTNING_FREQUENCY[d['freq']])
-        parts.append("lightning")        
+        parts.append("lightning")
         if d['type']:
             ltg_types = []
             group = d['type']
             while group:
                 ltg_types.append(LIGHTNING_TYPE[group[:2]])
                 group = group[2:]
-            parts.append("("+', '.join(ltg_types)+")")
+            parts.append("(" + ', '.join(ltg_types) + ")")
         if d['loc']:
             parts.append(xlate_loc(d['loc']))
         self._remarks.append(' '.join(parts))
-            
-    def _handleTSLocRemark( self, d ):
+
+    def _handleTSLocRemark(self, d):
         """
         Parse a thunderstorm location remark group.
         """
         text = "thunderstorm"
         if d['loc']:
-            text += " "+xlate_loc(d['loc'])
+            text += " " + xlate_loc(d['loc'])
         if d['dir']:
             text += " moving %s" % d['dir']
         self._remarks.append(text)
-        
-    def _handleAutoRemark( self, d ):
+
+    def _handleAutoRemark(self, d):
         """
         Parse an automatic Station remark group.
         """
@@ -868,60 +876,60 @@ class MetarRowParser(object):
             self._remarks.append("Automated Station")
         elif d['type'] == "2":
             self._remarks.append("Automated Station (type 2)")
-        
-    def _unparsedRemark( self, d ):
+
+    def _unparsedRemark(self, d):
         """
         Handle otherwise unparseable remark groups.
         """
         self._unparsed_remarks.append(d['group'])
-        
+
     ## the list of handler functions to use (in order) to process a METAR report
 
-    handlers = [ (TYPE_RE, _handleType, False), 
-                 (STATION_RE, _handleStation, False), 
-                 (TIME_RE, _handleTime, False), 
-                 (MODIFIER_RE, _handleModifier, False), 
-                 (WIND_RE, _handleWind, False), 
-                 (VISIBILITY_RE, _handleVisibility, True), 
-                 (RUNWAY_RE, _handleRunway, True), 
-                 (WEATHER_RE, _handleWeather, True), 
-                 (SKY_RE, _handleSky, True), 
-                 (TEMP_RE, _handleTemp, False), 
-                 (PRESS_RE, _handlePressure, True), 
-                 (RECENT_RE, _handleRecent, True), 
-                 (WINDSHEAR_RE, _handleWindShear, True), 
-                 (COLOR_RE, _handleColor, True), 
-                 (RUNWAYSTATE_RE, _handleRunwayState, True), 
-                 (TREND_RE, _handleTrend, False), 
-                 (REMARK_RE, _startRemarks, False) ]
+    handlers = [(TYPE_RE, _handleType, False),
+                (STATION_RE, _handleStation, False),
+                (TIME_RE, _handleTime, False),
+                (MODIFIER_RE, _handleModifier, False),
+                (WIND_RE, _handleWind, False),
+                (VISIBILITY_RE, _handleVisibility, True),
+                (RUNWAY_RE, _handleRunway, True),
+                (WEATHER_RE, _handleWeather, True),
+                (SKY_RE, _handleSky, True),
+                (TEMP_RE, _handleTemp, False),
+                (PRESS_RE, _handlePressure, True),
+                (RECENT_RE, _handleRecent, True),
+                (WINDSHEAR_RE, _handleWindShear, True),
+                (COLOR_RE, _handleColor, True),
+                (RUNWAYSTATE_RE, _handleRunwayState, True),
+                (TREND_RE, _handleTrend, False),
+                (REMARK_RE, _startRemarks, False)]
 
-    trend_handlers = [ (TRENDTIME_RE, _handleTrend, True), 
-                       (WIND_RE, _handleTrend, True), 
-                       (VISIBILITY_RE, _handleTrend, True), 
-                       (WEATHER_RE, _handleTrend, True), 
-                       (SKY_RE, _handleTrend, True), 
-                       (COLOR_RE, _handleTrend, True)]
+    trend_handlers = [(TRENDTIME_RE, _handleTrend, True),
+                      (WIND_RE, _handleTrend, True),
+                      (VISIBILITY_RE, _handleTrend, True),
+                      (WEATHER_RE, _handleTrend, True),
+                      (SKY_RE, _handleTrend, True),
+                      (COLOR_RE, _handleTrend, True)]
 
     ## the list of patterns for the various remark groups, 
     ## paired with the handler functions to use to record the decoded remark.
 
-    remark_handlers = [ (AUTO_RE,         _handleAutoRemark), 
-                        (SEALVL_PRESS_RE, _handleSealvlPressRemark), 
-                        (PEAK_WIND_RE,    _handlePeakWindRemark), 
-                        (WIND_SHIFT_RE,   _handleWindShiftRemark), 
-                        (LIGHTNING_RE,    _handleLightningRemark), 
-                        (TS_LOC_RE,       _handleTSLocRemark), 
-                        (TEMP_1HR_RE,     _handleTemp1hrRemark), 
-                        (PRECIP_1HR_RE,   _handlePrecip1hrRemark), 
-                        (PRECIP_24HR_RE,  _handlePrecip24hrRemark), 
-                        (PRESS_3HR_RE,    _handlePress3hrRemark), 
-                        (TEMP_6HR_RE,     _handleTemp6hrRemark), 
-                        (TEMP_24HR_RE,    _handleTemp24hrRemark), 
-                        (UNPARSED_RE,     _unparsedRemark) ]
-    
+    remark_handlers = [(AUTO_RE, _handleAutoRemark),
+                       (SEALVL_PRESS_RE, _handleSealvlPressRemark),
+                       (PEAK_WIND_RE, _handlePeakWindRemark),
+                       (WIND_SHIFT_RE, _handleWindShiftRemark),
+                       (LIGHTNING_RE, _handleLightningRemark),
+                       (TS_LOC_RE, _handleTSLocRemark),
+                       (TEMP_1HR_RE, _handleTemp1hrRemark),
+                       (PRECIP_1HR_RE, _handlePrecip1hrRemark),
+                       (PRECIP_24HR_RE, _handlePrecip24hrRemark),
+                       (PRESS_3HR_RE, _handlePress3hrRemark),
+                       (TEMP_6HR_RE, _handleTemp6hrRemark),
+                       (TEMP_24HR_RE, _handleTemp24hrRemark),
+                       (UNPARSED_RE, _unparsedRemark)]
+
     ## functions that return text representations of conditions for output
 
-    def string( self ):
+    def string(self):
         """
         Return a human-readable version of the decoded report.
         """
@@ -971,32 +979,32 @@ class MetarRowParser(object):
             lines.append("24-hour Precipitation: %s" % str(self.precip_24hr))
         if self._remarks:
             lines.append("remarks:")
-            lines.append("- "+self.remarks("\n- "))
+            lines.append("- " + self.remarks("\n- "))
         if self._unparsed_remarks:
-            lines.append("- "+' '.join(self._unparsed_remarks))
-        lines.append("METAR: "+self.code)
+            lines.append("- " + ' '.join(self._unparsed_remarks))
+        lines.append("METAR: " + self.code)
         return '\n'.join(lines)
 
-    def report_type( self ):
+    def report_type(self):
         """
         Return a textual description of the report type.
         """
-        if self.type == None:
+        if self.type is None:
             text = "unknown report type"
-        elif REPORT_TYPE.get(self.type):
-            text  = REPORT_TYPE[self.type]
+        elif REPORT_TYPE.get(self.type) is not None:
+            text = REPORT_TYPE[self.type]
         else:
-            text = self.type+" report"
+            text = self.type + " report"
         if self.cycle:
             text += ", cycle %d" % self.cycle
         if self.mod:
-            if REPORT_TYPE.get(self.mod):
+            if REPORT_TYPE.get(self.mod) is not None:
                 text += " (%s)" % REPORT_TYPE[self.mod]
             else:
                 text += " (%s)" % self.mod
         return text
 
-    def wind( self, units="KT" ):
+    def wind(self, units="KT"):
         """
         Return a textual description of the wind conditions.
         
@@ -1012,14 +1020,14 @@ class MetarRowParser(object):
                 text = "variable at %s" % wind_speed
             elif self.wind_dir_from:
                 text = "%s to %s at %s" % \
-                               (self.wind_dir_from.compass(), self.wind_dir_to.compass(), wind_speed)
+                       (self.wind_dir_from.compass(), self.wind_dir_to.compass(), wind_speed)
             else:
                 text = "%s at %s" % (self.wind_dir.compass(), wind_speed)
             if self.wind_gust:
                 text += ", gusting to %s" % self.wind_gust.string(units)
         return text
 
-    def peak_wind( self, units="KT" ):
+    def peak_wind(self, units="KT"):
         """
         Return a textual description of the peak wind conditions.
         
@@ -1039,7 +1047,7 @@ class MetarRowParser(object):
                     text += " at %s" % self.peak_wind_time.strftime('%H:%M')
         return text
 
-    def wind_shift( self, units="KT" ):
+    def wind_shift(self, units="KT"):
         """
         Return a textual description of the wind shift time
         
@@ -1050,7 +1058,7 @@ class MetarRowParser(object):
         else:
             return self.wind_shift_time.strftime('%H:%M')
 
-    def visibility( self, units=None ):
+    def visibility(self, units=None):
         """
         Return a textual description of the visibility.
         
@@ -1068,8 +1076,8 @@ class MetarRowParser(object):
             else:
                 text += "; %s" % self.max_vis.string(units)
         return text
-    
-    def runway_visual_range( self, units=None ):
+
+    def runway_visual_range(self, units=None):
         """
         Return a textual description of the runway visual range.
         """
@@ -1080,8 +1088,8 @@ class MetarRowParser(object):
             else:
                 lines.append("on runway %s, %s" % (name, low.string(units)))
         return '; '.join(lines)
-    
-    def present_weather( self ):
+
+    def present_weather(self):
         """
         Return a textual description of the present weather.
         """
@@ -1100,15 +1108,15 @@ class MetarRowParser(object):
                     if len(desci) == 4:
                         text_parts.append(WEATHER_DESC[desci[2:]])
             if preci:
-                code_parts.append(preci)        
+                code_parts.append(preci)
                 if len(preci) == 2:
                     precip_text = WEATHER_PREC[preci]
                 elif len(preci) == 4:
-                    precip_text = WEATHER_PREC[preci[:2]]+" and "
+                    precip_text = WEATHER_PREC[preci[:2]] + " and "
                     precip_text += WEATHER_PREC[preci[2:]]
                 elif len(preci) == 6:
-                    precip_text = WEATHER_PREC[preci[:2]]+", "
-                    precip_text += WEATHER_PREC[preci[2:4]]+" and "
+                    precip_text = WEATHER_PREC[preci[:2]] + ", "
+                    precip_text += WEATHER_PREC[preci[2:4]] + " and "
                     precip_text += WEATHER_PREC[preci[4:]]
                 if desci == "TS":
                     text_parts.append("with")
@@ -1118,18 +1126,18 @@ class MetarRowParser(object):
             if obsci:
                 code_parts.append(obsci)
                 text_parts.append(WEATHER_OBSC[obsci])
-                
+
             if otheri:
                 code_parts.append(otheri)
                 text_parts.append(WEATHER_OTHER[otheri])
             code = ' '.join(code_parts)
-            if WEATHER_SPECIAL.get(code):
+            if WEATHER_SPECIAL.get(code) is not None:
                 text_list.append(WEATHER_SPECIAL[code])
             else:
                 text_list.append(' '.join(text_parts))
         return '; '.join(text_list)
-    
-    def sky_conditions( self, sep="; " ):
+
+    def sky_conditions(self, sep="; "):
         """
         Return a textual description of the sky conditions.
         """
@@ -1143,23 +1151,23 @@ class MetarRowParser(object):
                     what = CLOUD_TYPE[cloud]
                 elif cover != "OVC":
                     what = "clouds"
-                else: 
+                else:
                     what = ""
                 if cover == "VV":
-                    text_list.append("%s%s, visibility to %s" % 
-                            (SKY_COVER[cover], what, str(height)))
+                    text_list.append("%s%s, visibility to %s" %
+                                     (SKY_COVER[cover], what, str(height)))
                 else:
-                    text_list.append("%s%s at %s" % 
-                            (SKY_COVER[cover], what, str(height)))
+                    text_list.append("%s%s at %s" %
+                                     (SKY_COVER[cover], what, str(height)))
         return sep.join(text_list)
-            
-    def trend( self ):
+
+    def trend(self):
         """
         Return the trend forecast groups
         """
         return " ".join(self._trend_groups)
 
-    def remarks( self, sep="; "):
+    def remarks(self, sep="; "):
         """
         Return the decoded remarks.
         """
