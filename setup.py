@@ -37,7 +37,7 @@ in international reports are accepted."""
 
 setup(
     name="metar",
-    version="1.4.0",
+    version="1.5.0",
     author="Tom Pollard",
     author_email="pollard@alum.mit.edu",
     url="http://python-metar.sourceforge.net/",
@@ -46,7 +46,7 @@ setup(
     download_url="http://sourceforge.net/project/platformdownload.php?group_id=134052",
     license="MIT",
     packages=["metar"],
-    platforms="Python 2.5 and later.",
+    platforms="Python 2.7 and later.",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
